@@ -49,4 +49,4 @@ getServerPlayers(...)
 
 ## Soon
 - [ ] Add support URL ip address. For example `server.ls-rp.com:7777`
-- [ ] Add support for Latin letters in texts
+- [ ] Add support for cyrillic letters in texts
