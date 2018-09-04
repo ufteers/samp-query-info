@@ -1,6 +1,21 @@
 const dgram = require('dgram');
+const dns = require('dns');
 
-var request = function(ipaddress, port, opcode, response) {	
+var safeRequest = function(ipaddress, port, opcode, safeResponse) {
+	if(validateIPAddress(ipaddress))
+	{
+		request(ipaddress, port, opcode, function(error, response){safeResponse.apply(ipaddress, [error, response])});
+	}
+	else 
+	{
+		dns.lookup(ipaddress, function(err, result) {
+			if(err) safeResponse.apply(ipaddress, [err, result]);
+			request(ipaddress, port, opcode, function(error, response){safeResponse.apply(ipaddress, [error, response])});
+		})
+	}
+}
+
+var request = function(ipaddress, port, opcode, response) { 
 	var socket = dgram.createSocket("udp4");
 	var packet = Buffer.alloc(10 + opcode.length);
 
@@ -101,18 +116,23 @@ var request = function(ipaddress, port, opcode, response) {
 	});
 }
 
+function validateIPAddress(ipaddress) {  
+	if (/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test(ipaddress)) return true;
+	return false;
+}  
+
 var getServerInfo = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		var serverinfo = response;
 
-		request.call(this, serverip, serverport, "r", function (error, response) {
+		safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 			if(error) return reply.apply(serverip, [true, response]);
 			serverinfo["property"] = response;
 
 			if(parseInt(serverinfo.players) < 100)
 			{
-				request.call(this, serverip, serverport, "d", function (error, response) {
+				safeRequest.call(this, serverip, serverport, "d", function (error, response) {
 					if(error) return reply.apply(serverip, [true, response]);
 					serverinfo["playerlist"] = response;
 
@@ -125,63 +145,63 @@ var getServerInfo = function(serverip, serverport, reply) {
 }
 
 var getServerOnline = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, parseInt(response.players)]);
 	});
 }
 
 var getServerMaxPlayers = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, parseInt(response.maxplayers)]);
 	});
 }
 
 var getServerName = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.servername]);
 	});
 }
 
 var getServerGamemodeName = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.gamemodename]);
 	});
 }
 
 var getServerLanguage = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "i", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.language]);
 	});
 }
 
 var getServerVersion = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "r", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.version]);
 	});
 }
 
 var getServerWeather = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "r", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.weather]);
 	});
 }
 
 var getServerWebSite = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "r", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.weburl]);
 	});
 }
 
 var getServerWorldTime = function(serverip, serverport, reply) {
-	request.call(this, serverip, serverport, "r", function (error, response) {
+	safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 		if(error) return reply.apply(serverip, [true, response]);
 		return reply.apply(serverip, [false, response.worldtime]);
 	});
@@ -191,10 +211,9 @@ var getServerPlayers = function(serverip, serverport, reply) {
 	getServerOnline.call(this, serverip, serverport, function (error, response) {
 		if(!isFinite(response) || response > 100) return reply.apply(serverip, [true, "[error] more 100 players on server"]);
 
-		request.call(this, serverip, serverport, "d", function (error, response) {
+		safeRequest.call(this, serverip, serverport, "d", function (error, response) {
 			if(error) return reply.apply(serverip, [true, response]);
 			return reply.apply(serverip, [false, response]);
 		});
 	});
 }
-

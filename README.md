@@ -8,6 +8,7 @@ getServerInfo("127.0.0.1", 7777, function(error, response)
     console.log(response);
 });
 ```
+Instead of IP, you can also use the URL. As example `server.sa-mp.com`.
 >#### Sample response
 ```
 {
@@ -48,5 +49,4 @@ getServerPlayers(...)
 ```
 
 ## Soon
-- [ ] Add support URL ip address. For example `server.ls-rp.com:7777`
 - [ ] Add support for cyrillic letters in texts
