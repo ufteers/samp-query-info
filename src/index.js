@@ -76,9 +76,9 @@ var request = function(ipaddress, port, opcode, response) {
 			}
 			else if(opcode === 'r') 
 			{				
-				var propertycount = message.readUInt16LE(offset); offset += 2;
+				var propertiescount = message.readUInt16LE(offset); offset += 2;
 
-				for(var i = 0; i < propertycount; i++) 
+				for(var i = 0; i < propertiescount; i++) 
 				{
 					var property = message.readUInt8(offset);
 					property = message.slice(++offset, offset += property).toString();
@@ -112,6 +112,28 @@ var request = function(ipaddress, port, opcode, response) {
 				}				
 				return response.apply(ipaddress, [false, object]);
 			}
+			else if(opcode === 'c')
+			{
+				object = [];
+
+				var playerslist = [], playercount = message.readUInt16LE(offset); offset += 2;
+
+				for(var i = 0; i < playercount; i++)
+				{
+					playercount--; 
+					var player = {};
+
+					player.name = message.readUInt8(offset);
+					player.name = message.slice(++offset, offset += player.name).toString();
+					player.score = message.readUInt16LE(offset);
+					offset += 4;
+
+					object.push(player);
+				}	
+				console.log(object);				
+				return response.apply(ipaddress, [false, object]);
+				
+			}
 		}
 	});
 }
@@ -128,7 +150,7 @@ var getServerInfo = function(serverip, serverport, reply) {
 
 		safeRequest.call(this, serverip, serverport, "r", function (error, response) {
 			if(error) return reply.apply(serverip, [true, response]);
-			serverinfo["property"] = response;
+			serverinfo["properties"] = response;
 
 			if(parseInt(serverinfo.players) < 100)
 			{
@@ -141,6 +163,13 @@ var getServerInfo = function(serverip, serverport, reply) {
 			}
 			else return reply.apply(serverip, [false, serverinfo]);
 		});
+	});
+}
+
+var getServerProperties = function(serverip, serverport, reply) {
+	safeRequest.call(this, serverip, serverport, "r", function (error, response) {
+		if(error) return reply.apply(serverip, [true, response]);
+		return reply.apply(serverip, [false, response]);
 	});
 }
 
@@ -211,9 +240,30 @@ var getServerPlayers = function(serverip, serverport, reply) {
 	getServerOnline.call(this, serverip, serverport, function (error, response) {
 		if(!isFinite(response) || response > 100) return reply.apply(serverip, [true, "[error] more 100 players on server"]);
 
+		safeRequest.call(this, serverip, serverport, "c", function (error, response) {
+			if(error) return reply.apply(serverip, [true, response]);
+			return reply.apply(serverip, [false, response]);
+		});
+	});
+}
+
+var getServerPlayersDetailed = function(serverip, serverport, reply) {
+	getServerOnline.call(this, serverip, serverport, function (error, response) {
+		if(!isFinite(response) || response > 100) return reply.apply(serverip, [true, "[error] more 100 players on server"]);
+
 		safeRequest.call(this, serverip, serverport, "d", function (error, response) {
 			if(error) return reply.apply(serverip, [true, response]);
 			return reply.apply(serverip, [false, response]);
 		});
+	});
+}
+
+var getServerPing = function(serverip, serverport, reply) {
+
+    var timenow = new Date().getTime();
+		
+	safeRequest.call(this, serverip, serverport, "i", function (error, response) {
+		if(error) return reply.apply(serverip, [true, response]);
+		return reply.apply(serverip, [false, new Date().getTime() - timenow]);
 	});
 }

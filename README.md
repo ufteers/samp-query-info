@@ -18,7 +18,7 @@ Instead of IP, you can also use the URL. As example `server.sa-mp.com`.
   servername: 'SA-MP Unofficial server',
   gamemodename: 'freeroam',
   language: 'English',
-  property:
+  properties:
   { 
      artwork: 'Yes',
      lagcomp: 'On',
@@ -36,6 +36,7 @@ Instead of IP, you can also use the URL. As example `server.sa-mp.com`.
 ```
 >#### Other functions
 ```javascript
+getServerProperties(...)
 getServerOnline(...)
 getServerMaxPlayers(...)
 getServerName(...)
@@ -46,6 +47,8 @@ getServerWeather(...)
 getServerWebSite(...)
 getServerWorldTime(...)
 getServerPlayers(...)
+getServerPlayersDetailed(...)
+getServerPing(...)
 ```
 
 ## Soon
